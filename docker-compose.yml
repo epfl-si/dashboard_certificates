@@ -1,0 +1,21 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    container_name: es01
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./elastic/data:/usr/share/elasticsearch/data
+    networks:
+      - dashboard_secu
+    
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.2
+    container_name: kb01
+    ports:
+      - "5601:5601"
+    networks:
+      - dashboard_secu
+
+networks:
+  dashboard_secu: {}
