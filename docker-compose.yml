@@ -27,7 +27,7 @@ services:
       - elasticsearch
 
   shiny:
-    build: .
+    build: ./shiny
     container_name: sn01
     ports:
       - "8181:8180"
