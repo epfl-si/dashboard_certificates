@@ -1,13 +1,13 @@
 setup:
-	@mkdir -p elastic/data elastic/logs
-
+	@mkdir -p elastic/data elastic/logs shiny
+	
 vm-max_map_count:
 	@if [ "$$(uname)" = "Linux" ]; then \
 		sudo sysctl -w vm.max_map_count=262144 1>/dev/null && echo "vm.max_map_count changed"; \
 	fi
 
 up: setup vm-max_map_count
-	@docker compose up -d
+	@docker compose up
 
 logs:
 	docker compose logs -f 
@@ -17,6 +17,9 @@ exec-elastic:
 
 exec-kibana:
 	docker compose exec kibana bash
+
+exec-kibana:
+	docker compose exec shiny bash
 
 stop:
 	docker compose stop
