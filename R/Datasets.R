@@ -1,4 +1,5 @@
 #install.packages("elastic")
+#install.packages("jsonlite")
 library(elastic)
 library(jsonlite)
 
