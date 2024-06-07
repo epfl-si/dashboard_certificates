@@ -3,11 +3,9 @@ Création d'un dashboard pour visualiser ses propres certificats ayant une éch�
 
 ---------------------------------------------
 
-Utiliser ce lien pour docker : https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+Utiliser ce lien pour docker : https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html.
 
-Utiliser ces repos pour elasticsearch et kibana : https://github.com/LisaHJung
-
-utiliser ce lien si docker KO : https://docs.docker.com/engine/install/linux-postinstall/
+Utiliser ces repos pour elasticsearch et kibana : https://github.com/LisaHJung.
 
 ## Commandes utiles
 
