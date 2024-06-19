@@ -1,71 +1,44 @@
-library(shiny)
-library(dplyr)
+# FIXME : installation et activation dans autre script selon env
 library(ggplot2)
-library(gapminder)
+library(shiny)
+library(DT)
 
-# Specify the application port
+
+# FIXME : selon env si container ou local
 options(shiny.host = "0.0.0.0")
 options(shiny.port = 8180)
 
+
+
+# open connection with elasticsearch
+con_elasticsearch <- connect(host = "localhost", path = "", user="", pwd = "", port = 9200, transport_schema  = "http")
+# open connection with sqlite
+con_sqlite <- dbConnect(RSQLite::SQLite(), "./volumes/sqlite/cmdb.sqlite")
+
+# import ssl data from elasticsearch
+ssl_data <- fromJSON(Search(con_elasticsearch, index = "ssl", size = 10000, raw = TRUE))$hits$hits$"_source" %>% mutate(ipv4 = as.character(ipv4))
+
+
 ui <- fluidPage(
-  sidebarLayout(
-    sidebarPanel(
-      tags$h4("Gapminder Dashboard"),
-      tags$hr(),
-      selectInput(inputId = "inContinent", label = "Continent", choices = unique(gapminder$continent), selected = "Europe")
-    ),
-    mainPanel(
-      plotOutput(outputId = "outChartLifeExp"),
-      plotOutput(outputId = "outChartGDP")
+  titlePanel("SSL details"),
+  fluidRow(
+    column(4,
+        selectInput("date_fin",
+                    "Date d'échéance:",
+                    c("All", unique(as.character(ssl_data$validTo))))
     )
-  )
+  ),
+  DT::dataTableOutput("table")
 )
 
-server <- function(input, output, session) {
-  # Filter data and store as reactive value
-  data <- reactive({
-    gapminder %>%
-      filter(continent == input$inContinent) %>%
-      group_by(year) %>%
-      summarise(
-        AvgLifeExp = round(mean(lifeExp)),
-        AvgGdpPercap = round(mean(gdpPercap), digits = 2)
-      )
-  })
-  
-  # Common properties for charts
-  chart_theme <- ggplot2::theme(
-    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
-    axis.title.x = element_text(size = 15),
-    axis.title.y = element_text(size = 15),
-    axis.text.x = element_text(size = 12),
-    axis.text.y = element_text(size = 12)
-  )
-  
-  # Render Life Exp chart
-  output$outChartLifeExp <- renderPlot({
-    ggplot(data(), aes(x = year, y = AvgLifeExp)) +
-      geom_col(fill = "#0099f9") +
-      geom_text(aes(label = AvgLifeExp), vjust = 2, size = 6, color = "#ffffff") +
-      labs(title = paste("Average life expectancy in", input$inContinent)) +
-      theme_classic() +
-      chart_theme
-  })
-  
-  # Render GDP chart
-  output$outChartGDP <- renderPlot({
-    ggplot(data(), aes(x = year, y = AvgGdpPercap)) +
-      geom_line(color = "#f96000", size = 2) +
-      geom_point(color = "#f96000", size = 5) +
-      geom_label(
-        aes(label = AvgGdpPercap),
-        nudge_x = 0.25,
-        nudge_y = 0.25
-      ) +
-      labs(title = paste("Average GDP per capita in", input$inContinent)) +
-      theme_classic() +
-      chart_theme
-  })
+server <- function(input, output) {
+  output$table <- DT::renderDataTable(DT::datatable({
+    data <- ssl_data
+    if (input$date_fin != "All") {
+      data <- data[data$validTo == input$date_fin,]
+    }
+    data
+  }))
 }
 
 shinyApp(ui = ui, server = server)

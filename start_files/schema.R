@@ -8,23 +8,13 @@ for (p in packages) {
   }
 }
 
-con <- dbConnect(RSQLite::SQLite(), "./volumes/sqlite/cmdb.sqlite")
-
-#create_table_unite <- "
-#CREATE TABLE Unite (
-#	id_unite INTEGER NOT NULL,
-#	path TEXT NOT NULL,
-#	sigle TEXT NOT NULL,
-#	CONSTRAINT Unite_PK PRIMARY KEY (id_unite)
-#);"
-
-#dbExecute(con, create_table_unite)
+con <- dbConnect(RSQLite::SQLite(), "./cmdb.sqlite")
 
 create_table_serveur <- "
 CREATE TABLE Serveur (
-	ip_adr TEXT NOT NULL,
-	fqdn TEXT NOT NULL,
-	CONSTRAINT Serveur_PK PRIMARY KEY (ip_adr)
+	id_ip_adr INTEGER PRIMARY KEY AUTOINCREMENT,
+	ip TEXT NOT NULL,
+	fqdn TEXT NOT NULL
 );"
 
 dbExecute(con, create_table_serveur)
@@ -34,9 +24,18 @@ CREATE TABLE Personne (
 	sciper INTEGER NOT NULL,
 	cn TEXT NOT NULL,
 	email TEXT NOT NULL,
-	serveur_ip INTEGER,
-	CONSTRAINT Personne_PK PRIMARY KEY (sciper),
-	CONSTRAINT Personne_Serveur_FK FOREIGN KEY (serveur_ip) REFERENCES Serveur(ip_adr) ON DELETE SET NULL ON UPDATE CASCADE
+	CONSTRAINT Personne_PK PRIMARY KEY (sciper)
 );"
 
 dbExecute(con, create_table_personne)
+
+create_table_serveur_personne <- "
+CREATE TABLE Serveur_Personne (
+	id_serv_pers INTEGER PRIMARY KEY AUTOINCREMENT,
+	ip_adr TEXT NOT NULL,
+	sciper INTEGER NOT NULL,
+	CONSTRAINT Serveur_Serveur_Personne_FK FOREIGN KEY (ip_adr) REFERENCES Serveur(ip) ON DELETE SET NULL ON UPDATE CASCADE,
+	CONSTRAINT Personne_Serveur_Personne_FK FOREIGN KEY (sciper) REFERENCES Serveur(sciper) ON DELETE SET NULL ON UPDATE CASCADE
+);"
+
+dbExecute(con, create_table_serveur_personne)

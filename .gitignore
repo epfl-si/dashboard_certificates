@@ -4,3 +4,5 @@ volumes/
 prod_to_dev/internal_data/
 # file containing credentials
 .env
+# file for Makefile
+.env_started

@@ -41,8 +41,9 @@ init: setup vm-max_map_count
 	$(MAKE) secure
 	docker rm -f elasticsearch
 	docker compose up -d
+	touch .env_started
 
-data:
+data: .env_started
 	@echo "Mapping of cmdb index" && curl -XPUT "http://localhost:9200/cmdb" -k -u ${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD} -H "Content-Type: application/json" -d @./prod_to_dev/mapping_cmdb.json
 	@echo "Pull elasticdump image" && docker pull elasticdump/elasticsearch-dump
 	@echo "Load cmdb index in elasticsearch" && docker run --net=host --rm -ti -v ./prod_to_dev/internal_data:/tmp elasticdump/elasticsearch-dump \
@@ -56,13 +57,11 @@ data:
 	@curl -XPUT "http://localhost:9200/_settings" -k -u ${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD} -H "Content-Type: application/json" -d '{"index.max_result_window": 1000000}'
 	cp ./start_files/cmdb_empty.sqlite ./volumes/sqlite/cmdb.sqlite
 	cp ./start_files/add_cmdb_data.R ./volumes/sqlite/add_cmdb_data.R
-	docker exec -d ss chmod +x /home/sqlite/add_cmdb_data.R
-	docker exec -d ss R -e "source('/home/sqlite/add_cmdb_data.R')"
+	docker exec -d ss Rscript "/home/sqlite/add_cmdb_data.R"
 	cp ./start_files/wip_start_dashboard.R ./volumes/shiny/dashboard.R
-	docker exec -d ss R -e "source('/home/sqlite/dashboard.R')"
-	touch .data_loaded
+	docker exec -d ss Rscript "/home/sqlite/dashboard.R"
 
-.data_loaded:
+.env_started:
 	$(MAKE) init
 
 up: .data_loaded vm-max_map_count
