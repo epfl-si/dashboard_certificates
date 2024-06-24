@@ -6,3 +6,5 @@ prod_to_dev/internal_data/
 .env
 # file for Makefile
 .env_started
+# file for Makefile
+.data_loaded

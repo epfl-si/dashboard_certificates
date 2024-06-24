@@ -43,6 +43,9 @@ init: setup vm-max_map_count
 	docker compose up -d
 	touch .env_started
 
+.env_started:
+	$(MAKE) init
+
 data: .env_started
 	@echo "Mapping of cmdb index" && curl -XPUT "http://localhost:9200/cmdb" -k -u ${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD} -H "Content-Type: application/json" -d @./prod_to_dev/mapping_cmdb.json
 	@echo "Pull elasticdump image" && docker pull elasticdump/elasticsearch-dump
@@ -55,14 +58,15 @@ data: .env_started
 	--output=http://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@localhost:9200/ssl \
 	--type=data
 	@curl -XPUT "http://localhost:9200/_settings" -k -u ${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD} -H "Content-Type: application/json" -d '{"index.max_result_window": 1000000}'
-	cp ./start_files/cmdb_empty.sqlite ./volumes/sqlite/cmdb.sqlite
+	cp ./start_files/cmdb_schema.sqlite ./volumes/sqlite/cmdb.sqlite
 	cp ./start_files/add_cmdb_data.R ./volumes/sqlite/add_cmdb_data.R
 	docker exec -d ss Rscript "/home/sqlite/add_cmdb_data.R"
 	cp ./start_files/wip_start_dashboard.R ./volumes/shiny/dashboard.R
 	docker exec -d ss Rscript "/home/sqlite/dashboard.R"
+	touch .data_loaded
 
-.env_started:
-	$(MAKE) init
+.data_loaded:
+	$(MAKE) data
 
 up: .data_loaded vm-max_map_count
 	@docker compose up -d
@@ -76,4 +80,5 @@ clean:
 	docker system prune
 	sed -i '/ELASTICSEARCH_TOKEN/d' .env
 	rm -rf ./volumes
+	rm .env_started
 	rm .data_loaded
