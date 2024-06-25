@@ -9,7 +9,7 @@ for (p in packages) {
 }
 
 # open connection with elasticsearch
-con_elasticsearch <- connect(host = "localhost", path = "", user="", pwd = "", port = 9200, transport_schema  = "http")
+con_elasticsearch <- connect(host = "localhost", path = "", user="elastic", pwd = "1_23e4", port = 9200, transport_schema  = "http")
 # open connection with sqlite
 con_sqlite <- dbConnect(RSQLite::SQLite(), "./volumes/sqlite/cmdb.sqlite")
 
@@ -61,13 +61,76 @@ for (i in 1:nrow(mix_rifs_adminit)) {
     dbExecute(con_sqlite, insert_pers_query)
 }
 
-# Serveur_Personne table
+# Serveur_Personne table -> old
 for (i in 1:nrow(cmdb_data_filtred)) {
     fqdn <- cmdb_data_filtred$fqdn[i]
     for (j in 1:nrow(mix_rifs_adminit)) {
         sciper <- mix_rifs_adminit$sciper[j]
         insert_serv_pers_query <- sprintf("INSERT INTO Serveur_Personne (id_serv_pers, fqdn, sciper) VALUES (NULL, '%s', '%s')", fqdn, sciper)
         dbExecute(con_sqlite, insert_serv_pers_query)
+    }
+}
+
+# Serveur_Personne table -> new
+
+# FIXME car ko pour creer table
+serveur_personne <- data.frame(fqdn = character(), sciper = numeric(), rifs_flag = numeric(), adminit_flag = numeric())
+for(i in 1:nrow(cmdb_data_filtred)) {
+  fqdn <- cmdb_data_filtred$fqdn[i]
+  rifs <- cmdb_data_filtred$unit$rifs[i]
+  rifs_df <- data.frame()
+  if (!is.null(rifs) && length(rifs) > 0) {
+    rifs_df <- do.call(rbind, rifs)
+  }
+  adminit <- cmdb_data_filtred$unit$adminit[i]
+  adminit_df <- data.frame()
+  if (!is.null(adminit) && length(adminit) > 0) {
+    adminit_df <- do.call(rbind, adminit)
+  }
+  if (nrow(rifs_df) > 0) {
+    for(j in 1:nrow(rifs_df)) {
+      sciper <- rifs_df$sciper[j]
+      rifs_flag <- 1
+      adminit_flag <- ifelse(sciper %in% adminit_df$sciper, 1, 0)
+      l <- data.frame(fqdn = fqdn, sciper = sciper, rifs_flag = rifs_flag, adminit_flag = adminit_flag)
+      serveur_personne <- rbind(serveur_personne, l)
+    }
+  }
+  #if (nrow(adminit_df) > 0) { # "isTRUE(adminit_df) &&" ne fonctionne pas non plus
+  #  adminit_only <- anti_join(adminit_df, serveur_personne, by = "sciper")
+  #  if (nrow(adminit_only) > 0) {
+  #    for(j in 1:nrow(adminit_only)) {
+  #      sciper <- adminit_only$sciper[j]
+  #      rifs_flag <- 0
+  #      adminit_flag <- 1
+  #      l <- data.frame(fqdn = fqdn, sciper = sciper, rifs_flag = rifs_flag, adminit_flag = adminit_flag)
+  #      serveur_personne <- rbind(serveur_personne, l)
+  #    }
+  #  }
+  #}
+}
+
+# TODO -> rajouter distinct
+
+for (i in 1:nrow(cmdb_data_filtred)) {
+    fqdn <- cmdb_data_filtred$fqdn[i]
+    rifs <- cmdb_data_filtred$unit$rifs[i]
+    rifs_df <- distinct(do.call(rbind, rifs))
+    adminit <- cmdb_data_filtred$unit$adminit[i]
+    adminit_df <- distinct(do.call(rbind, adminit))
+    rifs <- 0
+    adminit <- 0
+    for (j in 1:nrow(rifs_df)) {
+      sciper <- rifs_df$sciper[j]
+      rifs <- 1
+      insert_serv_pers_query <- sprintf("INSERT INTO Serveur_Personne (id_serv_pers, fqdn, sciper, rifs, adminit) VALUES (NULL, '%s', '%s', '%s', '%s')", fqdn, sciper, rifs, adminit)
+      dbExecute(con_sqlite, insert_serv_pers_query)
+    }
+    for (j in 1:nrow(adminit_df)) {
+      sciper <- adminit_df$sciper[j]
+      adminit <- 1
+      insert_serv_pers_query <- sprintf("INSERT INTO Serveur_Personne (id_serv_pers, fqdn, sciper, rifs, adminit) VALUES (NULL, '%s', '%s', '%s', '%s')", fqdn, sciper, rifs, adminit)
+      dbExecute(con_sqlite, insert_serv_pers_query)
     }
 }
 

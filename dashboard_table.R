@@ -36,14 +36,21 @@ tableau <- fqdns_ips_responsables_dates
 
 ui <- fluidPage(
   titlePanel("Certificats SSL"),
-  dataTableOutput("table")
+  DTOutput("table"),
+  verbatimTextOutput("details")
 )
 
 server <- function(input, output) {
-  output$table <- renderDataTable(datatable({
-    data <- tableau
-    data
-  }))
+  output$table <- renderDT({
+    datatable(tableau, selection = 'single')
+  })
+
+  # affiche simplement donnees en brut -> TODO
+  output$details <- renderPrint({
+    req(input$table_rows_selected)
+    selected_row <- input$table_rows_selected
+    tableau[selected_row, ]
+  })
 }
 
 shinyApp(ui = ui, server = server)
