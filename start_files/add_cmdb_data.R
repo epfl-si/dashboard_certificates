@@ -33,7 +33,7 @@ cmdb_data_unique <- cmdb_data %>% distinct() # toujours 88209 donc pas vraiment 
 fqdn_nb_doublons <- cmdb_data %>% group_by(fqdn) %>% tally() %>% filter(n > 1) # 638 doublons et pas 652...
 fqdn_doublons <- fqdn_nb_doublons %>% ungroup() %>% select(fqdn) # liste des doublons
 # pourquoi pas le meme nombre de doublons ?
-# cmdb_data_filtred <- ???
+cmdb_data_filtred <- cmdb_data_filtred_semi
 
 # import data into database
 
@@ -41,7 +41,7 @@ fqdn_doublons <- fqdn_nb_doublons %>% ungroup() %>% select(fqdn) # liste des dou
 for (i in 1:nrow(cmdb_data_filtred)) {
     ip_adr <- cmdb_data_filtred$ip[i]
     fqdn <- cmdb_data_filtred$fqdn[i]
-    insert_query <- sprintf("INSERT INTO Serveur (id_ip_adr, ip, fqdn) VALUES (NULL, '%s', '%s')", ip_adr, fqdn)
+    insert_query <- sprintf("INSERT INTO Serveur (id_ip_adr, fqdn, ip) VALUES (NULL, '%s', '%s')", fqdn, ip_adr)
     dbExecute(con_sqlite, insert_query)
 }
 
@@ -63,10 +63,10 @@ for (i in 1:nrow(mix_rifs_adminit)) {
 
 # Serveur_Personne table
 for (i in 1:nrow(cmdb_data_filtred)) {
-    ip_adr <- cmdb_data_filtred$ip[i]
+    fqdn <- cmdb_data_filtred$fqdn[i]
     for (j in 1:nrow(mix_rifs_adminit)) {
         sciper <- mix_rifs_adminit$sciper[j]
-        insert_serv_pers_query <- sprintf("INSERT INTO Serveur_Personne (id_serv_pers, ip_adr, sciper) VALUES (NULL, '%s', '%s')", ip_adr, sciper)
+        insert_serv_pers_query <- sprintf("INSERT INTO Serveur_Personne (id_serv_pers, fqdn, sciper) VALUES (NULL, '%s', '%s')", fqdn, sciper)
         dbExecute(con_sqlite, insert_serv_pers_query)
     }
 }
