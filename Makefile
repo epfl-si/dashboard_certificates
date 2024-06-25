@@ -22,7 +22,11 @@ vm-max_map_count:
 	fi
 
 secure:
-	sleep 20
+	echo "Waiting for elasticsearch to be ready"; \
+	while [ "$$(curl -s -o /dev/null -w '%{http_code}' -u ${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD} -XGET "localhost:9200/_security/_authenticate")" != "200" ]; do \
+	sleep 5; \
+	echo "..."; \
+	done
 	echo -e "ELASTICSEARCH_TOKEN = \c" >> .env && \
 	curl -X POST -u ${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD} "localhost:9200/_security/service/elastic/kibana/credential/token/token1?pretty" | jq '.token'.'value' >> .env
 
@@ -30,8 +34,8 @@ init: setup vm-max_map_count
 	docker run -d \
 	--name elasticsearch \
 	-p 9200:9200 \
-	-v ./volumes/elastic/data:/usr/share/elasticsearch/data \
-	-v ./volumes/elastic/logs:/usr/share/elasticsearch/logs \
+	-v ${pwd}/volumes/elastic/data:/usr/share/elasticsearch/data \
+	-v ${pwd}/volumes/elastic/logs:/usr/share/elasticsearch/logs \
 	-e "discovery.type=single-node" \
 	-e "cluster.name=cluster_name" \
 	-e "network.host=0.0.0.0" \
@@ -42,6 +46,9 @@ init: setup vm-max_map_count
 	docker rm -f elasticsearch
 	docker compose up -d
 	touch .env_started
+
+elasticsearch_healthy:
+	watch -n 0.5 curl -u ${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD} -X  GET "localhost:9200/_cluster/health?pretty"
 
 .env_started:
 	$(MAKE) init
@@ -77,7 +84,6 @@ logs:
 
 clean:
 	docker compose stop
-	docker system prune
 	sed -i '/ELASTICSEARCH_TOKEN/d' .env
 	rm -rf ./volumes
 	rm .env_started

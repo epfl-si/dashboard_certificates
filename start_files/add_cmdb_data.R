@@ -9,7 +9,7 @@ for (p in packages) {
 }
 
 # open connection with elasticsearch
-con_elasticsearch <- connect(host = "localhost", path = "", user="elastic", pwd = "1_23e4", port = 9200, transport_schema  = "http")
+con_elasticsearch <- connect(host = "localhost", path = "", user="", pwd = "", port = 9200, transport_schema  = "http")
 # open connection with sqlite
 con_sqlite <- dbConnect(RSQLite::SQLite(), "./volumes/sqlite/cmdb.sqlite")
 
