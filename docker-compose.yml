@@ -1,0 +1,37 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    container_name: es
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./volumes/elastic/data:/usr/share/elasticsearch/data
+      - ./volumes/elastic/logs:/usr/share/elasticsearch/logs
+    environment:
+      - discovery.type=single-node
+      - cluster.name=cluster_name
+      - network.host=0.0.0.0
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - xpack.security.enabled=true
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.2
+    container_name: kb
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://localhost:9200
+      - ELASTICSEARCH_SERVICEACCOUNTTOKEN=${ELASTICSEARCH_TOKEN}
+    depends_on:
+     - elasticsearch
+
+  shiny_sqlite:
+    build: .
+    container_name: ss
+    ports:
+      - "8181:8180"
+    depends_on:
+     - elasticsearch
+    volumes:
+      - ./volumes/shiny:/home/shiny
+      - ./volumes/sqlite:/home/sqlite
